@@ -1,0 +1,277 @@
+<?php
+
+namespace PhpGraphs\Graphs;
+
+use function _\sortBy;
+use function _\reduce;
+use function _\flattenDeep;
+use function _\zipObject;
+
+/**
+ * Make joints from tree
+ * @param array $tree
+ * @return array
+ * @example
+ * $tree = ['B', [
+ *    ['D'],
+ *    ['A', [
+ *        ['C', [
+ *            ['F'],
+ *            ['E'],
+ *       ]],
+ *    ]],
+ * ]];
+ *
+ * makeJoints($tree);
+ * // [
+ * //   'B' => ['D', 'A'],
+ * //   'D' => ['B'],
+ * //   'A' => ['C', 'B'],
+ * //   'C' => ['F', 'E', 'A'],
+ * //   'F' => ['C'],
+ * //   'E' => ['C'],
+ * // ]
+ */
+function makeJoints(array $tree)
+{
+    $iter = function ($tree, $acc, $parent) use (&$iter) {
+        $leaf = $tree[0];
+        $children = $tree[1] ?? null;
+
+        if (!$children) {
+            $acc[$leaf] = [$parent];
+            return $acc;
+        }
+
+        $neighbors = array_filter(array_merge(...$children), function ($n) {
+            return !is_array($n);
+        });
+
+        $neighbors[] = $parent;
+
+        $newAcc = array_merge($acc, [$leaf => array_values($neighbors)]);
+
+        return array_reduce($children, function ($iAcc, $n) use (&$iter, $leaf) {
+            return $iter($n, $iAcc, $leaf);
+        }, $newAcc);
+    };
+
+    return $iter($tree, [], '');
+}
+
+/**
+ * Build tree from leaf
+ * @param array $joints
+ * @param string $name (leaf name)
+ * @return array
+ * @example
+ * $joints = [
+ *     B: ['D', 'A'],
+ *     D: ['B'],
+ *     A: ['C', 'B'],
+ *     C: ['F', 'E', 'A'],
+ *     F: ['C'],
+ *     E: ['C'],
+ * ];
+ *
+ * buildTreeFromLeaf($joints, 'C');
+ * // ['C', [
+ * //     ['F'],
+ * //     ['E'],
+ * //     ['A', [
+ * //         ['B', [
+ * //             ['D'],
+ * //         ]],
+ * //     ]],
+ * // ]];
+ */
+function buildTreeFromLeaf(array $joints, string $leaf)
+{
+    $iter = function ($current, $acc) use (&$iter, $joints) {
+
+        $checked = [...$acc, $current];
+        $neighbors = $joints[$current] ?? [];
+        $filtered = array_filter($neighbors, function ($n) use ($checked) {
+            return !in_array($n, $checked) && $n !== "";
+        });
+        $mapped = array_map(function ($n) use (&$iter, $checked) {
+            return $iter($n, $checked);
+        }, array_values($filtered));
+
+        $result = empty($mapped) ? [$current] : [$current, $mapped];
+        
+        return $result;
+    };
+
+    $tree = $iter($leaf, []);
+
+    return $tree;
+}
+
+
+/**
+ * Sort joints
+ * @param array $joints
+ * @return array
+ * @example
+ * $joints = [
+ *     B: ['D', 'A'],
+ *     D: ['B'],
+ *     A: ['C', 'B'],
+ *     C: ['F', 'E', 'A'],
+ *     F: ['C'],
+ *     E: ['C'],
+ * ];
+ *
+ * sortJoints($joints);
+ * // [
+ * //     B: ['A', 'D'],
+ * //     D: ['B'],
+ * //     A: ['B', 'C'],
+ * //     C: ['A', 'E', 'F'],
+ * //     F: ['C'],
+ * //     E: ['C'],
+ * // ]
+ */
+function sortJoints(array $joints)
+{
+    $sortLeaf = function ($acc, $neighbors, $name) {
+        return array_merge($acc, [$name => sortBy($neighbors, [fn($n) => $n])]);
+    };
+
+    return reduce($joints, $sortLeaf, []);
+}
+
+/**
+ * Map tree
+ * @param callable $func
+ * @param array $tree
+ * @return array
+ * @example
+ * $tree = ['B', [
+ *     ['D'],
+ *     ['A', [
+ *         ['C', [
+ *             ['F'],
+ *             ['E'],
+ *         ]],
+ *     ]],
+ * ]];
+ *
+ * map(function ($node) {
+ *     [$name] = $node;
+ *     return strtolower($name);
+ * }, $tree);
+ * // ['b', [
+ * //     ['d'],
+ * //     ['a', [
+ * //         ['c', [
+ * //             ['f'],
+ * //             ['e'],
+ * //         ]],
+ * //     ]],
+ * // ]];
+ */
+function map(callable $func, array $tree)
+{
+    $children = $tree[1] ?? null;
+    $updatedName = $func($tree);
+    
+    if (!$children) {
+        return [$updatedName];
+    }
+
+    return [
+        $updatedName,
+        array_map(fn($child) => map($func, $child), $children),
+    ];
+}
+
+/**
+ * Make associations (key-value pairs)
+ * @param array $uniqueTree (tree with unique leaf names)
+ * @param array $tree
+ * @return array
+ * @example
+ * $tree = ['B', [
+ *     ['D'],
+ *     ['A', [
+ *         ['C', [
+ *             ['F'],
+ *             ['E'],
+ *         ]],
+ *     ]],
+ * ]];
+ *
+ * $uniqueTree = map(fn($node) => uniqid($node[0]), $tree);
+ * // ['B1', [
+ * //     ['D2'],
+ * //     ['A3', [
+ * //         ['C4', [
+ * //             ['F5'],
+ * //             ['E6'],
+ * //         ]],
+ * //     ]],
+ * // ]];
+ *
+ * makeAssociations($uniqueTree, $tree);
+ * // [
+ * //     B1: 'B',
+ * //     D2: 'D',
+ * //     A3: 'A',
+ * //     C4: 'C',
+ * //     F5, 'F',
+ * //     E6, 'E',
+ * // ]
+ */
+function makeAssociations(array $uniqueTree, array $tree)
+{
+    $uniqueLeafs = flattenDeep($uniqueTree);
+    $leafs = flattenDeep($tree);
+    return (array) zipObject($uniqueLeafs, $leafs);
+}
+
+/**
+ * Sorts leafs in a tree (does not change its structure)
+ * @param array $tree
+ * @return array
+ * @example
+ * $tree = ['B', [
+ *     ['D'],
+ *     ['A', [
+ *         ['C', [
+ *             ['F'],
+ *             ['E'],
+ *         ]],
+ *         ['B', [
+ *             ['D'],
+ *         ]],
+ *     ]],
+ * ]];
+ *
+ * sortTree($tree);
+ * // ['B', [
+ * //     ['A', [
+ * //         ['B', [
+ * //             ['D'],
+ * //         ]],
+ * //         ['C', [
+ * //             ['E'],
+ * //             ['F'],
+ * //         ]],
+ * //     ]],
+ * //     ['D'],
+ * // ]];
+ */
+function sortTree(array $tree)
+{
+    $uniqueTree = map(fn($node) => uniqid($node[0]), $tree);
+    $associations = makeAssociations($uniqueTree, $tree);
+    [$root] = $uniqueTree;
+    $joints = makeJoints($uniqueTree);
+    $sortedJoints = sortJoints($joints);
+
+    $sorted = buildTreeFromLeaf($sortedJoints, $root);
+
+    return map(fn($leaf) => $associations[$leaf[0]], $sorted);
+}
