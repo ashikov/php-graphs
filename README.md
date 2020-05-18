@@ -1,5 +1,7 @@
 # php-graphs
 
+![master](https://github.com/hexlet-components/php-graphs/workflows/master/badge.svg)
+
 ## Functions for working with Graphs
 
 ```php
