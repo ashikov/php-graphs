@@ -2,7 +2,9 @@
 
 ![master](https://github.com/hexlet-components/php-graphs/workflows/master/badge.svg)
 
-## Functions for working with Graphs
+Functions for working with Graphs.
+
+## Examples
 
 ```php
 <?php
@@ -10,12 +12,6 @@
 use function PhpGraphs\Graphs\makeJoints;
 use function PhpGraphs\Graphs\buildTreeFromLeaf;
 use function PhpGraphs\Graphs\sortJoints;
-```
-
-## Examples
-
-```php
-<?php
 
 $tree = ['B', [
     ['D'],
