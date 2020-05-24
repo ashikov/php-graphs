@@ -2,10 +2,7 @@
 
 namespace PhpGraphs\Graphs;
 
-use function _\sortBy;
-use function _\reduce;
-use function _\flattenDeep;
-use function _\zipObject;
+use Tightenco\Collect\Support\Collection;
 
 /**
  * Make joints from tree
@@ -135,11 +132,13 @@ function buildTreeFromLeaf(array $joints, string $leaf)
  */
 function sortJoints(array $joints)
 {
-    $sortLeaf = function ($acc, $neighbors, $name) {
-        return array_merge($acc, [$name => sortBy($neighbors, [fn($n) => $n])]);
-    };
+    $sortedJoints = [];
+    foreach ($joints as $node => $neighbors) {
+        sort($neighbors);
+        $sortedJoints[$node] = $neighbors;
+    }
 
-    return reduce($joints, $sortLeaf, []);
+    return $sortedJoints;
 }
 
 /**
@@ -226,9 +225,19 @@ function map(callable $func, array $tree)
  */
 function makeAssociations(array $uniqueTree, array $tree)
 {
-    $uniqueLeafs = flattenDeep($uniqueTree);
-    $leafs = flattenDeep($tree);
-    return (array) zipObject($uniqueLeafs, $leafs);
+    $uniqueLeafs = collect($uniqueTree)->flatten();
+    $leafs = collect($tree)->flatten();
+
+    $result = (object) [];
+    $index = -1;
+    $length = count($uniqueLeafs);
+
+    while (++$index < $length) {
+        $leaf = $leafs[$index] ?? null;
+        $result->{$uniqueLeafs[$index]} = $leaf;
+    }
+
+    return (array) $result;
 }
 
 /**
