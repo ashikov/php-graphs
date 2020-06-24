@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpGraphs\Graphs;
+namespace Php\Graphs\graphs;
 
 use Tightenco\Collect\Support\Collection;
 

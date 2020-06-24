@@ -1,14 +1,14 @@
 <?php
 
-namespace PhpGraphs\Tests;
+namespace Php\Graphs\Tests;
 
 use PHPUnit\Framework\TestCase;
 
-use function PhpGraphs\Graphs\makeJoints;
-use function PhpGraphs\Graphs\buildTreeFromLeaf;
-use function PhpGraphs\Graphs\sortJoints;
-use function PhpGraphs\Graphs\map;
-use function PhpGraphs\Graphs\sortTree;
+use function Php\Graphs\graphs\makeJoints;
+use function Php\Graphs\graphs\buildTreeFromLeaf;
+use function Php\Graphs\graphs\sortJoints;
+use function Php\Graphs\graphs\map;
+use function Php\Graphs\graphs\sortTree;
 
 class GraphsTest extends TestCase
 {
