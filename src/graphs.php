@@ -40,9 +40,7 @@ function makeJoints(array $tree)
             return $acc;
         }
 
-        $neighbors = array_filter(array_merge(...$children), function ($n) {
-            return !is_array($n);
-        });
+        $neighbors = array_map(fn($child) => $child[0], $children);
 
         $neighbors[] = $parent;
 
