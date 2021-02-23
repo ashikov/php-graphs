@@ -55,7 +55,6 @@ class GraphsTest extends TestCase
           'D' => ['H', 'B'],
           'H' => ['D']
         ];
-        
 
         $actual = makeJoints($tree);
         $this->assertEquals($expected, $actual);
@@ -166,7 +165,7 @@ class GraphsTest extends TestCase
             [$name] = $node;
             return strtolower($name);
         }, $tree);
-        
+
         $this->assertEquals($expected, $actual);
     }
 
@@ -199,7 +198,7 @@ class GraphsTest extends TestCase
         ]];
 
         $actual = sortTree($tree);
-        
+
         $this->assertEquals($expected, $actual);
     }
 }

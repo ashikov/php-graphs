@@ -94,7 +94,7 @@ function buildTreeFromLeaf(array $joints, string $leaf)
         }, array_values($filtered));
 
         $result = empty($mapped) ? [$current] : [$current, $mapped];
-        
+
         return $result;
     };
 
@@ -173,7 +173,7 @@ function map(callable $func, array $tree)
 {
     $children = $tree[1] ?? null;
     $updatedName = $func($tree);
-    
+
     if (!$children) {
         return [$updatedName];
     }
