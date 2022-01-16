@@ -1,6 +1,6 @@
 # php-graphs
 
-![master](https://github.com/hexlet-components/php-graphs/workflows/master/badge.svg)
+[![github action status](https://github.com/hexlet-components/php-graphs/workflows/PHP%20CI/badge.svg)](../../actions)
 
 Functions for working with Graphs.
 

@@ -1,10 +1,8 @@
-name: master
+name: PHP CI
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  - push
+  - pull_request
 
 jobs:
   build:
